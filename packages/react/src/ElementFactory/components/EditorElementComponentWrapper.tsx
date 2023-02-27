@@ -1,8 +1,8 @@
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { MantineProvider } from "@mantine/core";
 import Tippy, { TippyProps } from "@tippyjs/react";
-import { RequiredDynamicParams } from "@blocknote/core";
+import { RequiredDynamicParams, BlockNoteEditor } from "@blocknote/core";
 import { BlockNoteTheme } from "../../BlockNoteTheme";
-import { useCallback, useState } from "react";
 
 /**
  * Component used in the ReactElementFactory to wrap the EditorElementComponent in a MantineProvider and Tippy
@@ -22,10 +22,13 @@ export function EditorElementComponentWrapper<
   staticParams: ElementStaticParams;
   dynamicParams: ElementDynamicParams;
   editorElementComponent: (
-    props: ElementStaticParams & ElementDynamicParams
+    props: ElementStaticParams &
+      ElementDynamicParams & { domRef: React.RefObject<any> }
   ) => JSX.Element;
   tippyProps?: TippyProps;
+  editorRef?: React.MutableRefObject<BlockNoteEditor | null>;
 }) {
+  const domRef = useRef<any>(null);
   const EditorElementComponent = props.editorElementComponent;
 
   const [contentCleared, setContentCleared] = useState(false);
@@ -45,6 +48,26 @@ export function EditorElementComponentWrapper<
     setContentCleared(true);
   }, [props.rootElement]);
 
+  useEffect(() => {
+    const outerClickEvent = (ev: MouseEvent) => {
+      if (
+        props.editorRef?.current &&
+        !props.editorRef?.current.tiptapEditor.view.dom.contains(
+          ev.target as HTMLElement
+        ) &&
+        !domRef.current?.contains(ev.target as HTMLElement)
+      ) {
+        onHidden();
+      }
+    };
+
+    window.addEventListener("click", outerClickEvent);
+
+    return () => {
+      window.removeEventListener("click", outerClickEvent);
+    };
+  }, [onHidden, props.editorRef]);
+
   return (
     <MantineProvider theme={BlockNoteTheme}>
       <Tippy
@@ -52,6 +75,7 @@ export function EditorElementComponentWrapper<
         content={
           !contentCleared ? (
             <EditorElementComponent
+              domRef={domRef}
               {...props.staticParams}
               {...props.dynamicParams}
             />

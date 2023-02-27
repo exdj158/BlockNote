@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { EditHyperlinkMenu } from "../EditHyperlinkMenu/components/EditHyperlinkMenu";
 import { Toolbar } from "../../SharedComponents/Toolbar/components/Toolbar";
 import { ToolbarButton } from "../../SharedComponents/Toolbar/components/ToolbarButton";
@@ -16,12 +16,14 @@ export type HyperlinkToolbarProps = {
  * Main menu component for the hyperlink extension.
  * Renders a toolbar that appears on hyperlink hover.
  */
-export const HyperlinkToolbar = (props: HyperlinkToolbarProps) => {
+export const HyperlinkToolbar = (
+  props: HyperlinkToolbarProps & { domRef: React.MutableRefObject<any> }
+) => {
   const [isEditing, setIsEditing] = useState(false);
-
   if (isEditing) {
     return (
       <EditHyperlinkMenu
+        ref={props.domRef}
         url={props.url}
         text={props.text}
         update={props.editHyperlink}
@@ -30,11 +32,16 @@ export const HyperlinkToolbar = (props: HyperlinkToolbarProps) => {
   }
 
   return (
-    <Toolbar>
+    <Toolbar ref={props.domRef}>
       <ToolbarButton
         mainTooltip="Edit"
         isSelected={false}
-        onClick={() => setIsEditing(true)}>
+        onClick={() => {
+          // add setTimeout to let domRef delay to change
+          setTimeout(() => {
+            setIsEditing(true);
+          });
+        }}>
         Edit Link
       </ToolbarButton>
       <ToolbarButton
